@@ -1,0 +1,71 @@
+library(shiny)
+library(randomForest)
+
+# UI Part
+ui <- fluidPage(
+  
+  titlePanel("Advanced Insurance Premium Predictor"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("age", "Age:", min = 18, max = 100, value = 30),
+      selectInput("sex", "Sex:", choices = c("male", "female")),
+      sliderInput("bmi", "BMI:", min = 10, max = 50, value = 25, step = 0.1),
+      sliderInput("children", "Number of Children:", min = 0, max = 5, value = 0),
+      selectInput("smoker", "Smoker:", choices = c("yes", "no")),
+      selectInput("region", "Region:", choices = c("northeast", "northwest", "southeast", "southwest"))
+    ),
+    
+    mainPanel(
+      h3("Predicted Premium:"),
+      verbatimTextOutput("prediction"),
+      br(),
+      h3("Effect of Age on Predicted Premium:"),
+      plotOutput("agePlot")
+    )
+  )
+)
+
+# Server Part
+server <- function(input, output) {
+  
+  # Reactive expression: new data based on user input
+  new_customer <- reactive({
+    data.frame(
+      age = input$age,
+      sex = factor(input$sex, levels = levels(train_data$sex)),
+      bmi = input$bmi,
+      children = input$children,
+      smoker = factor(input$smoker, levels = levels(train_data$smoker)),
+      region = factor(input$region, levels = levels(train_data$region))
+    )
+  })
+  
+  # Predict and display premium
+  output$prediction <- renderText({
+    predicted_value <- predict(rf_model, new_customer())
+    paste("₹", round(predicted_value, 2))
+  })
+  
+  # Plot premium vs age
+  output$agePlot <- renderPlot({
+    age_seq <- seq(18, 100, by = 1)
+    temp_data <- data.frame(
+      age = age_seq,
+      sex = factor(input$sex, levels = levels(train_data$sex)),
+      bmi = input$bmi,
+      children = input$children,
+      smoker = factor(input$smoker, levels = levels(train_data$smoker)),
+      region = factor(input$region, levels = levels(train_data$region))
+    )
+    predicted_premiums <- predict(rf_model, temp_data)
+    
+    plot(age_seq, predicted_premiums, type = "l", col = "blue", lwd = 2,
+         xlab = "Age", ylab = "Predicted Premium (₹)",
+         main = "How Age Affects Insurance Premium")
+    grid()
+  })
+}
+
+# Run the App
+shinyApp(ui = ui, server = server)
