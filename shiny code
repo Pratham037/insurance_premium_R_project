@@ -1,7 +1,6 @@
 library(shiny)
 library(randomForest)
 
-# UI Part
 ui <- fluidPage(
   
   titlePanel("Advanced Insurance Premium Predictor"),
@@ -26,10 +25,8 @@ ui <- fluidPage(
   )
 )
 
-# Server Part
 server <- function(input, output) {
   
-  # Reactive expression: new data based on user input
   new_customer <- reactive({
     data.frame(
       age = input$age,
@@ -41,13 +38,11 @@ server <- function(input, output) {
     )
   })
   
-  # Predict and display premium
   output$prediction <- renderText({
     predicted_value <- predict(rf_model, new_customer())
     paste("₹", round(predicted_value, 2))
   })
-  
-  # Plot premium vs age
+
   output$agePlot <- renderPlot({
     age_seq <- seq(18, 100, by = 1)
     temp_data <- data.frame(
@@ -67,5 +62,4 @@ server <- function(input, output) {
   })
 }
 
-# Run the App
 shinyApp(ui = ui, server = server)
