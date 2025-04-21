@@ -1,4 +1,3 @@
-# 1. Load Required Libraries
 install.packages(c("dplyr", "ggplot2", "caret", "glmnet", "corrplot"))
 library(dplyr)
 library(ggplot2)
@@ -6,67 +5,48 @@ library(caret)
 library(glmnet)
 library(corrplot)
 
-# 2. Load Dataset
 data <- read.csv("C:\\Users\\ASUS\\OneDrive\\Dokumen\\R programming\\insurance (1).csv")
 head(data)
 str(data)
 summary(data)
 
-# 3. Data Cleaning
-# Check for missing values
 sum(is.na(data))  # Should be 0 ideally
-# Convert categorical variables to factors
 data$children<-as.numeric(data$children)
 data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 
-# 4. Exploratory Data Analysis (EDA)
-# Distribution of charges
 ggplot(data, aes(x = charges)) +
   geom_histogram(fill = "skyblue", bins = 30, color = "black") +
   ggtitle("Distribution of Insurance Charges")
 
-# Charges based on Smoking Status
 ggplot(data, aes(x = smoker, y = charges, fill = smoker)) +
   geom_boxplot() +
   ggtitle("Charges by Smoking Status")
 
-# Correlation matrix for numeric variables
 numeric_vars <- data %>% select_if(is.numeric)
 corrplot(cor(numeric_vars), method = "circle")
 
-# Scatter plot: Age vs Charges
 ggplot(data, aes(x = age, y = charges)) +
   geom_point(color = "blue") +
   geom_smooth(method = "lm", col = "red") +
   ggtitle("Age vs Charges")
 
-# 5. Feature Engineering (optional scaling)
-#data$bmi <- scale(data$bmi)
-#data$age <- scale(data$age)
 
-# 6. Split Data into Train and Test
 set.seed(123)
 split <- createDataPartition(data$charges, p = 0.8, list = FALSE)
 train_data <- data[split, ]
 test_data <- data[-split, ]
 
-# 7. Model Building
-
-## 7.1 Linear Regression
 linear_model <- lm(charges ~ ., data = train_data)
 summary(linear_model)
 
-# Predict on Test Set
 pred_linear <- predict(linear_model, test_data)
 
-# Evaluate Linear Model
 mse_linear <- mean((test_data$charges - pred_linear)^2)
 rmse_linear <- sqrt(mse_linear)
 cat("Linear Regression RMSE:", rmse_linear, "\n")
 
-## 7.2 Lasso Regression
 X_train <- model.matrix(charges ~ . , train_data)[, -1]
 y_train <- train_data$charges
 X_test <- model.matrix(charges ~ . , test_data)[, -1]
@@ -75,34 +55,27 @@ y_test <- test_data$charges
 lasso_model <- cv.glmnet(X_train, y_train, alpha = 1)
 plot(lasso_model)
 
-# Predict
 pred_lasso <- predict(lasso_model, s = lasso_model$lambda.min, newx = X_test)
 
-# Evaluate Lasso
 mse_lasso <- mean((y_test - pred_lasso)^2)
 rmse_lasso <- sqrt(mse_lasso)
 cat("Lasso Regression RMSE:", rmse_lasso, "\n")
 
-## 7.3 Ridge Regression
 ridge_model <- cv.glmnet(X_train, y_train, alpha = 0)
 plot(ridge_model)
 
-# Predict
 pred_ridge <- predict(ridge_model, s = ridge_model$lambda.min, newx = X_test)
 
-# Evaluate Ridge
 mse_ridge <- mean((y_test - pred_ridge)^2)
 rmse_ridge <- sqrt(mse_ridge)
 cat("Ridge Regression RMSE:", rmse_ridge, "\n")
 
-# 8. Compare Models
 results <- data.frame(
   Model = c("Linear Regression", "Lasso Regression", "Ridge Regression"),
   RMSE = c(rmse_linear, rmse_lasso, rmse_ridge)
 )
 print(results)
 
-# 9. Predict Premium for a New Customer
 new_customer <- data.frame(
   age = 40,
   sex = factor("male", levels = levels(data$sex)),
@@ -112,49 +85,38 @@ new_customer <- data.frame(
   region = factor("southeast", levels = levels(data$region))
 )
 
-# Predict using best model (you can choose based on RMSE)
 predicted_premium <- predict(linear_model, new_customer)
 cat("Predicted Insurance Premium for New Customer:", predicted_premium, "\n")
 str(train_data)
 str(new_customer)
 
-# Predict on test data
 predictions <- predict(linear_model, newdata = test_data)
 
-# Calculate RMSE
 rmse <- sqrt(mean((predictions - test_data$charges)^2))
 cat("RMSE:", rmse, "\n")
 
 summary(linear_model)$r.squared
 
-# Predict
 predictions <- predict(linear_model, newdata = test_data)
 
-# RMSE
 rmse <- sqrt(mean((predictions - test_data$charges)^2))
 cat("RMSE:", rmse, "\n")
 
-# R-squared
 r2 <- summary(linear_model)$r.squared
 cat("R-squared:", r2, "\n")
 
-# Adjusted R-squared
 adj_r2 <- summary(linear_model)$adj.r.squared
 cat("Adjusted R-squared:", adj_r2, "\n")
 
-# Predict on test data
 predictions <- predict(linear_model, newdata = test_data)
 
-# Create a dataframe to plot
 plot_data <- data.frame(
   Actual = test_data$charges,
   Predicted = predictions
 )
 
-# Load ggplot2
 library(ggplot2)
 
-# Create the plot
 ggplot(plot_data, aes(x = Actual, y = Predicted)) +
   geom_point(color = "blue", alpha = 0.6) +   # scatter points
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 1.2) +  # ideal line
@@ -163,11 +125,8 @@ ggplot(plot_data, aes(x = Actual, y = Predicted)) +
        y = "Predicted Charges") +
   theme_minimal()
 
-
-# Calculate R-squared
 r2 <- summary(linear_model)$r.squared
 
-# Plot with R-squared label
 ggplot(plot_data, aes(x = Actual, y = Predicted)) +
   geom_point(color = "blue", alpha = 0.6) +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 1.2) +
@@ -179,33 +138,23 @@ ggplot(plot_data, aes(x = Actual, y = Predicted)) +
        y = "Predicted Charges") +
   theme_minimal()
 
-
-# Install and Load
 install.packages("randomForest")
 library(randomForest)
 
-# Train
 set.seed(123)
 rf_model <- randomForest(charges ~ ., data = train_data, ntree = 500, mtry = 3, importance = TRUE)
 print(rf_model)
 
-# Predict
 rf_predictions <- predict(rf_model, newdata = test_data)
 
-# Performance
 rf_rmse <- sqrt(mean((rf_predictions - test_data$charges)^2))
 cat("Random Forest RMSE:", rf_rmse, "\n")
 
 rf_r2 <- 1 - sum((rf_predictions - test_data$charges)^2) / sum((mean(train_data$charges) - test_data$charges)^2)
 cat("Random Forest R-squared:", rf_r2, "\n")
 
-# Feature Importance
 varImpPlot(rf_model)
 
-
-# Assume rf_model is already trained.
-
-# New customer
 new_customer <- data.frame(
   age = 35,
   sex = factor("female", levels = levels(train_data$sex)),
@@ -215,30 +164,24 @@ new_customer <- data.frame(
   region = factor("southeast", levels = levels(train_data$region))
 )
 
-# Predict
 predicted_premium_rf <- predict(rf_model, new_customer)
 cat("Predicted Premium using Random Forest:", predicted_premium_rf, "\n")
 
 
-
-# Predictions
 lin_predictions <- predict(linear_model, newdata = test_data)
 rf_predictions <- predict(rf_model, newdata = test_data)
 
-# Dataframe
 comparison_df <- data.frame(
   Actual = test_data$charges,
   Linear_Regression = lin_predictions,
   Random_Forest = rf_predictions
 )
 
-# RMSE
 rmse_lin <- sqrt(mean((lin_predictions - test_data$charges)^2))
 rmse_rf <- sqrt(mean((rf_predictions - test_data$charges)^2))
 cat("Linear Regression RMSE:", rmse_lin, "\n")
 cat("Random Forest RMSE:", rmse_rf, "\n")
 
-# Plot
 library(ggplot2)
 library(reshape2)
 
